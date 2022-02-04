@@ -1,0 +1,22 @@
+name: Guilds
+version: '${project.version}'
+main: com.itedya.guilds.Guilds
+api-version: 1.18
+depend:
+  - WorldGuard
+  - WorldEdit
+
+commands:
+  g:
+    description: Komenda do gildii
+    usage: /g <komenda>
+    permission: itedya-guilds.command
+    permission-message: '&cBrak permisji!'
+
+permissions:
+  itedya-guilds:
+    children:
+      create:
+        description: Stworz gildie
+      delete:
+        description: Usun gildie

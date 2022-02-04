@@ -1,0 +1,6 @@
+&7---------------- &aItedyaGuilds &7----------------
+&b/g stworz <krotka_nazwa_gildii> <nazwa_gildii> &e- &7Polecenie na tworzenie gildii (nazwa gildii moze zawierac spacje)
+&b/g usun &e- &7Usun gildie
+&b/g zapros <nick_gracza> &e- &7Zapros do gildii
+&b/g akceptuj &e- &7Akceptuj zaproszenie do gildii
+&7---------------- &aItedyaGuilds &7----------------
