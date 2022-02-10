@@ -8,6 +8,7 @@ import com.itedya.guilds.dtos.InviteToGuildDto;
 import com.itedya.guilds.middlewares.CommandArgumentsAreValid;
 import com.itedya.guilds.middlewares.PlayerHasPermission;
 import com.itedya.guilds.middlewares.PlayerIsInGuild;
+import com.itedya.guilds.middlewares.PlayerIsOwnerOfGuild;
 import com.itedya.guilds.models.Invite;
 import com.itedya.guilds.utils.ChatUtil;
 import org.bukkit.Bukkit;
@@ -17,11 +18,7 @@ import org.bukkit.entity.Player;
 import java.util.logging.Level;
 
 public class InviteToGuild implements CommandHandler {
-    private final Guilds plugin;
-
-    public InviteToGuild(Guilds plugin) {
-        this.plugin = plugin;
-    }
+    private final Guilds plugin = Guilds.getPlugin();
 
     @Override
     public void handle(Player player, String[] args) {
@@ -34,9 +31,11 @@ public class InviteToGuild implements CommandHandler {
 
             var permissionMiddleware = new PlayerHasPermission(player, "itedya-guilds.invite");
             var guildMiddleware = new PlayerIsInGuild(player);
+            var playerIsOwnerOfGuild = new PlayerIsOwnerOfGuild(player);
             var verifyArgs = new CommandArgumentsAreValid(dto);
 
-            guildMiddleware.setNext(verifyArgs);
+            playerIsOwnerOfGuild.setNext(verifyArgs);
+            guildMiddleware.setNext(playerIsOwnerOfGuild);
             permissionMiddleware.setNext(guildMiddleware);
 
             var middlewareResult = permissionMiddleware.handle();

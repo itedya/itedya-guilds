@@ -16,18 +16,13 @@ import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import org.bukkit.*;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.logging.Level;
 
 public class CreateGuild implements CommandHandler {
-    private final Guilds plugin;
-
-    public CreateGuild(Guilds plugin) {
-        this.plugin = plugin;
-    }
+    private final Guilds plugin = Guilds.getPlugin();
 
     @Override
     public void handle(Player player, String[] args) {

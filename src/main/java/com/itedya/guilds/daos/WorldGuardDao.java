@@ -50,6 +50,10 @@ public class WorldGuardDao {
     public void addPlayerToRegion(ProtectedCuboidRegion region, Player player) {
         region.getMembers().addPlayer(player.getUniqueId());
     }
+
+    public void removePlayerFromRegion(ProtectedCuboidRegion region, Player player) {
+        region.getMembers().removePlayer(player.getUniqueId());
+    }
 }
 
 

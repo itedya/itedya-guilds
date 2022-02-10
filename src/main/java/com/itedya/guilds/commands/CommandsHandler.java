@@ -2,6 +2,7 @@ package com.itedya.guilds.commands;
 
 import com.itedya.guilds.Guilds;
 import com.itedya.guilds.commands.handlers.*;
+import com.itedya.guilds.commands.handlers.admin.GiveGuildItemsToPlayer;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,16 +13,26 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class CommandsHandler implements CommandExecutor {
+    private final Guilds plugin = Guilds.getPlugin();
     private final Map<String, CommandHandler> commandHandlers = new HashMap<>();
 
-    public CommandsHandler(Guilds plugin) {
-        commandHandlers.put("stworz", new CreateGuild(plugin));
-        commandHandlers.put("usun", new DeleteGuild(plugin));
-        commandHandlers.put("zapros", new InviteToGuild(plugin));
-        commandHandlers.put("akceptuj", new AcceptInviteToGuild(plugin));
-        commandHandlers.put("pomoc", new SendHelp(plugin));
+    public CommandsHandler() {
+        commandHandlers.put("stworz", new CreateGuild());
+        commandHandlers.put("wyjdz", new LeaveGuild());
+        commandHandlers.put("info", new ShowGuildInfo());
+        commandHandlers.put("usun", new DeleteGuild());
+        commandHandlers.put("zapros", new InviteToGuild());
+        commandHandlers.put("akceptuj", new AcceptInviteToGuild());
+        commandHandlers.put("wyrzuc", new KickOutOfGuild());
+        commandHandlers.put("pomoc", new SendHelp());
+        commandHandlers.put("dom", new TeleportToHome());
+        commandHandlers.put("ustawdom", new SetGuildHome());
+        commandHandlers.put("admin:dajitemki", new GiveGuildItemsToPlayer());
+
+        Objects.requireNonNull(plugin.getCommand("g")).setExecutor(this);
     }
 
     @Override

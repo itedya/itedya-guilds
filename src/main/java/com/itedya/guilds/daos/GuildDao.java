@@ -4,7 +4,6 @@ import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
 import com.itedya.guilds.Guilds;
 import com.itedya.guilds.models.Guild;
-import com.itedya.guilds.models.GuildHome;
 import org.bukkit.Bukkit;
 
 import java.io.*;
@@ -25,23 +24,16 @@ public class GuildDao {
         return instance;
     }
 
-    private final Gson gson;
-    private final Path path;
+    private final Guilds plugin = Guilds.getPlugin();
+    private final Gson gson = new Gson();
+    private final Path path = Paths.get(plugin.getDataFolder().getPath(), "guilds.json");
 
     private CopyOnWriteArrayList<Guild> data;
 
     private GuildDao() {
-        // get plugin
-        Guilds plugin = (Guilds) Bukkit.getPluginManager().getPlugin("guilds");
-        assert plugin != null;
-
-        // get path of data
-        path = Paths.get(plugin.getDataFolder().getPath(), "guilds.json");
-
-        // get google json instance
-        gson = new Gson();
-
         try {
+            plugin.saveResource("guilds.json", false);
+
             // read data
             FileReader fileReader = new FileReader(path.toString());
             data = new CopyOnWriteArrayList<>();

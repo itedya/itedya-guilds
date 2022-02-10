@@ -33,22 +33,16 @@ public class GuildHeartDao {
     }
 
     // dao stuff
-    private final Path path;
-    private Gson gson;
+    private final Guilds plugin = Guilds.getPlugin();
+    private final Path path = Paths.get(plugin.getDataFolder().getPath(), "guildhearts.json");
+    private Gson gson = new Gson();
     private CopyOnWriteArrayList<GuildHeart> data;
 
     private GuildHeartDao() {
-        // Get plugin instance
-        Guilds plugin = (Guilds) Bukkit.getPluginManager().getPlugin("guilds");
-        assert plugin != null;
-
-        // Get path of database file
-        path = Paths.get(plugin.getDataFolder().getPath(), "guildhearts.json");
-
         try {
-            // Assign data from file to Array
+            plugin.saveResource("guildhearts.json", false);
+
             FileReader fileReader = new FileReader(path.toString());
-            gson = new Gson();
 
             data = new CopyOnWriteArrayList<>(gson.fromJson(fileReader, GuildHeart[].class));
 

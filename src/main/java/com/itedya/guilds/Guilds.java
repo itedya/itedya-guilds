@@ -3,15 +3,21 @@ package com.itedya.guilds;
 import com.itedya.guilds.commands.CommandsHandler;
 import com.itedya.guilds.daos.*;
 import com.itedya.guilds.listeners.GuildHeartBreakListener;
+import com.itedya.guilds.listeners.OnJoinSendMessage;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Objects;
 import java.util.logging.Level;
 
 public final class Guilds extends JavaPlugin {
+    private static Guilds plugin;
+
+    public static Guilds getPlugin() {
+        return plugin;
+    }
 
     @Override
     public void onEnable() {
+        plugin = this;
 
         if (this.getDataFolder().mkdir()) {
             this.getLogger().info("Created config data folder");
@@ -19,16 +25,16 @@ public final class Guilds extends JavaPlugin {
             this.getLogger().info("Config data folder already created");
         }
 
+        new CommandsHandler();
 
-        this.saveResource("guilds.json", false);
-        this.saveResource("members.json", false);
-        this.saveResource("homes.json", false);
-        this.saveResource("guildhearts.json", false);
-        this.saveResource("queue.json", false);
-        this.saveResource("queue/announce-guild-heart-break.json", false);
-        Objects.requireNonNull(this.getCommand("g")).setExecutor(new CommandsHandler(this));
+        GuildDao.getInstance();
+        GuildHomeDao.getInstance();
+        GuildHeartDao.getInstance();
+        MemberDao.getInstance();
+        PendingMessagesDao.getInstance();
 
-        this.getServer().getPluginManager().registerEvents(new GuildHeartBreakListener(), this);
+        new GuildHeartBreakListener();
+        new OnJoinSendMessage();
     }
 
     @Override
@@ -38,7 +44,7 @@ public final class Guilds extends JavaPlugin {
             MemberDao.getInstance().close();
             GuildHomeDao.getInstance().close();
             GuildHeartDao.getInstance().close();
-            QueueDao.getInstance().close();
+            PendingMessagesDao.getInstance().close();
         } catch (Exception e) {
             getLogger().log(Level.SEVERE, "Server error", e);
         }

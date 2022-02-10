@@ -6,6 +6,7 @@ import com.itedya.guilds.daos.MemberDao;
 import com.itedya.guilds.daos.WorldGuardDao;
 import com.itedya.guilds.enums.MemberRole;
 import com.itedya.guilds.middlewares.PlayerHasPermission;
+import com.itedya.guilds.middlewares.PlayerIsInWorld;
 import com.itedya.guilds.middlewares.PlayerIsNotInGuild;
 import com.itedya.guilds.models.Invite;
 import com.itedya.guilds.models.Member;
@@ -13,16 +14,13 @@ import com.itedya.guilds.utils.ChatUtil;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.logging.Level;
 
 public class AcceptInviteToGuild implements CommandHandler {
-    private final Guilds plugin;
-
-    public AcceptInviteToGuild(Guilds plugin) {
-        this.plugin = plugin;
-    }
+    private final Guilds plugin = Guilds.getPlugin();
 
     @Override
     public void handle(Player player, String[] args) {
@@ -66,7 +64,10 @@ public class AcceptInviteToGuild implements CommandHandler {
 
             var guild = invite.getGuild();
 
-            WorldGuardDao worldGuardDao = new WorldGuardDao(BukkitAdapter.adapt(player.getWorld()));
+            World world = Bukkit.getWorld("world");
+            assert world != null;
+
+            WorldGuardDao worldGuardDao = new WorldGuardDao(BukkitAdapter.adapt(world));
             var region = worldGuardDao.getRegion("guild_" + guild.getShortName() + "_" + guild.getId());
 
             member = new Member();

@@ -4,12 +4,11 @@ import com.itedya.guilds.Guilds;
 import com.itedya.guilds.daos.GuildDao;
 import com.itedya.guilds.daos.GuildHeartDao;
 import com.itedya.guilds.daos.MemberDao;
-import com.itedya.guilds.daos.QueueDao;
-import com.itedya.guilds.enums.BreakerType;
+import com.itedya.guilds.daos.PendingMessagesDao;
 import com.itedya.guilds.models.Guild;
 import com.itedya.guilds.models.GuildHeart;
 import com.itedya.guilds.models.Member;
-import com.itedya.guilds.queueitems.AnnounceGuildHeartBreakToPlayerQueueItem;
+import com.itedya.guilds.models.MessageItem;
 import com.itedya.guilds.utils.ChatUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -22,12 +21,18 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 
 public class GuildHeartBreakListener implements Listener {
+    private Guilds plugin = Guilds.getPlugin();
+
+    public GuildHeartBreakListener() {
+        Guilds plugin = Guilds.getPlugin();
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void BlockBreakEvent(BlockBreakEvent e) {
         // Get block and check if it matches guild-heart block
@@ -70,14 +75,24 @@ public class GuildHeartBreakListener implements Listener {
             return;
         }
 
-        QueueDao queueDao = QueueDao.getInstance();
+        long expiresAt = new Date().getTime() + 60 * 60 * 24 * 1000;
 
-        Timestamp ts = new Timestamp(new Date().getTime());
-        long expiresAt = ts.getTime() + 60 * 60 * 24 * 1000;
+        PendingMessagesDao pendingMessagesDao = PendingMessagesDao.getInstance();
+
+        String message = ChatUtil.prepareGuildHeartBreakMessage(
+                breakerGuild,
+                player.getUniqueId().toString(),
+                guild,
+                expiresAt
+        );
 
         Bukkit.getWhitelistedPlayers().forEach(ele -> {
-            queueDao.add(new AnnounceGuildHeartBreakToPlayerQueueItem(breakerGuild, player.getUniqueId().toString(), guild, expiresAt, ele.getUniqueId().toString()));
+            if (! ele.isOnline()) {
+                pendingMessagesDao.addMessage(ele.getUniqueId().toString(), new MessageItem(message, expiresAt));
+            }
         });
+
+        plugin.getServer().broadcastMessage(message);
 
         e.setCancelled(true);
     }

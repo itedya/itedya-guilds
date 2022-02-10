@@ -4,22 +4,18 @@ import com.itedya.guilds.Guilds;
 import com.itedya.guilds.daos.*;
 import com.itedya.guilds.middlewares.PlayerHasPermission;
 import com.itedya.guilds.middlewares.PlayerIsInGuild;
+import com.itedya.guilds.middlewares.PlayerIsOwnerOfGuild;
 import com.itedya.guilds.models.Guild;
+import com.itedya.guilds.utils.ChatUtil;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.logging.Level;
 
 public class DeleteGuild implements CommandHandler {
-    private final Guilds plugin;
-
-    public DeleteGuild(Guilds plugin) {
-        this.plugin = plugin;
-    }
+    private final Guilds plugin = Guilds.getPlugin();
 
     @Override
     public void handle(Player player, String[] args) {
@@ -30,12 +26,15 @@ public class DeleteGuild implements CommandHandler {
         try {
             var permissionMiddleware = new PlayerHasPermission(player, "itedya-guilds.delete");
             var guildMiddleware = new PlayerIsInGuild(player);
+            var playerIsOwnerOfGuild = new PlayerIsOwnerOfGuild(player);
+
+            guildMiddleware.setNext(playerIsOwnerOfGuild);
             permissionMiddleware.setNext(guildMiddleware);
 
             var middlewareResult = permissionMiddleware.handle();
 
             if (middlewareResult != null) {
-                player.sendMessage(middlewareResult);
+                player.sendMessage(ChatUtil.CHAT_PREFIX + " " + middlewareResult);
                 return;
             }
 

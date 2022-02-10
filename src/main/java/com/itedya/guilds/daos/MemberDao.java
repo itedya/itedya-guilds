@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class MemberDao {
     private static MemberDao instance;
@@ -27,22 +28,16 @@ public class MemberDao {
         return instance;
     }
 
-    private final Gson gson;
+    private final Gson gson = new Gson();
+    private final Guilds plugin = Guilds.getPlugin();
+    private final Path path = Paths.get(plugin.getDataFolder().getPath(), "members.json");
 
     private List<Member> data;
-    private final Path path;
 
     private MemberDao() {
-        // get plugin
-        Guilds plugin = (Guilds) Bukkit.getPluginManager().getPlugin("guilds");
-
-        // get path of data
-        path = Paths.get(plugin.getDataFolder().getPath(), "members.json");
-
-        // get google json instance
-        gson = new Gson();
-
         try {
+            plugin.saveResource("members.json", false);
+
             // read data
             FileReader fileReader = new FileReader(path.toString());
             data = new CopyOnWriteArrayList<>();
@@ -93,5 +88,9 @@ public class MemberDao {
 
     public Member getByPlayerUuid(String playerUuid) {
         return data.stream().filter(item -> item.getPlayerUuid().equals(playerUuid)).findFirst().orElse(null);
+    }
+
+    public List<Member> getByGuildId(Integer id) {
+        return data.stream().filter(item -> item.getGuildId().equals(id)).collect(Collectors.toList());
     }
 }

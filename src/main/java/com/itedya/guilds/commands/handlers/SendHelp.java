@@ -13,7 +13,8 @@ import java.util.logging.Level;
 public class SendHelp implements CommandHandler {
     private List<String> help;
 
-    public SendHelp(Guilds plugin) {
+    public SendHelp() {
+        Guilds plugin = Guilds.getPlugin();
         InputStream is = plugin.getResource("help.txt");
 
         try {
