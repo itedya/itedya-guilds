@@ -4,12 +4,13 @@ import com.itedya.guilds.Guilds;
 import com.itedya.guilds.daos.*;
 import com.itedya.guilds.dtos.CreateGuildDto;
 import com.itedya.guilds.enums.MemberRole;
-import com.itedya.guilds.middlewares.*;
+import com.itedya.guilds.exceptions.ValidationException;
 import com.itedya.guilds.models.Guild;
 import com.itedya.guilds.models.GuildHeart;
 import com.itedya.guilds.models.GuildHome;
 import com.itedya.guilds.models.Member;
 import com.itedya.guilds.utils.ChatUtil;
+import com.itedya.guilds.utils.ValidationUtil;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.protection.flags.Flags;
@@ -19,50 +20,36 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.Objects;
 import java.util.logging.Level;
 
 public class CreateGuild implements CommandHandler {
-    private final Guilds plugin = Guilds.getPlugin();
-
     @Override
     public void handle(Player player, String[] args) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> validate(player, args));
-    }
+        Guilds plugin = Guilds.getPlugin();
 
-    public void validate(Player player, String[] args) {
         try {
             CreateGuildDto dto = CreateGuildDto.fromCommandArgs(args);
 
-            PlayerHasPermission permissionMiddleware = new PlayerHasPermission(player, "itedya-guilds.create");
-            var guildMiddleware = new PlayerIsNotInGuild(plugin, player);
-            var worldMiddleware = new PlayerIsInWorld(player, Bukkit.getWorld("world"));
-            var commandMiddleware = new CommandArgumentsAreValid(dto);
-            var neededItemsMiddleware = new PlayerHaveNeededItem(player);
+            ValidationUtil.senderHasPermission(player, "itedya-guilds.commands.create");
+            ValidationUtil.playerIsNotInGuild(player);
+            World world = ValidationUtil.playerIsInWorld(player, Objects.requireNonNull(Bukkit.getWorld("world")));
+            ValidationUtil.thereIsEnoughPlaceForCuboid(player.getLocation());
 
-            commandMiddleware.setNext(neededItemsMiddleware);
-            worldMiddleware.setNext(commandMiddleware);
-            guildMiddleware.setNext(worldMiddleware);
-            permissionMiddleware.setNext(guildMiddleware);
-
-            var middlewareResult = permissionMiddleware.handle();
-
-            if (middlewareResult != null) {
-                player.sendMessage(middlewareResult);
-                return;
-            }
-
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> createGuild(player, dto));
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> createGuild(dto, player, world));
+        } catch (ValidationException e) {
+            player.sendMessage(ChatUtil.wrapWithPrefix(ChatColor.YELLOW + e.getMessage()));
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Server error!", e);
-            player.sendMessage(ChatColor.RED + "Wystapil blad serwera. Sprobuj jeszcze raz lub skontaktuj sie z administratorem.");
+            player.sendMessage(ChatUtil.wrapWithPrefix("Wystapil blad serwera. Sprobuj jeszcze raz lub skontaktuj sie z administratorem."));
         }
     }
 
-    public void createGuild(Player player, CreateGuildDto dto) {
+    public void createGuild(CreateGuildDto dto, Player player, World world) {
         GuildDao guildDao = GuildDao.getInstance();
         GuildHomeDao guildHomeDao = GuildHomeDao.getInstance();
         MemberDao memberDao = MemberDao.getInstance();
-        WorldGuardDao worldGuardDao = new WorldGuardDao(BukkitAdapter.adapt(player.getWorld()));
+        WorldGuardDao worldGuardDao = new WorldGuardDao(BukkitAdapter.adapt(world));
         GuildHeartDao guildHeartDao = GuildHeartDao.getInstance();
 
         GuildHome guildHome = null;
@@ -85,15 +72,6 @@ public class CreateGuild implements CommandHandler {
                     BlockVector3.at(position.getX() - 50, 500, position.getZ() - 50)
             );
 
-            if (worldGuardDao.doesCuboidIntersect(region)) {
-                player.sendMessage(ChatColor.YELLOW + "Jakis cuboid juz istnieje na tym terenie (cuboid jest rozmiarow 100x100)!");
-                memberDao.deleteByGuildId(guild.getId());
-                guildHomeDao.delete(guildHome.getId());
-                guildHeartDao.delete(guildHeart.getId());
-                guildDao.delete(guild.getId());
-                return;
-            }
-
             region.setFlag(Flags.CHEST_ACCESS, StateFlag.State.ALLOW);
             region.setFlag(Flags.TNT, StateFlag.State.ALLOW);
             region.setFlag(Flags.PASSTHROUGH, StateFlag.State.DENY);
@@ -102,18 +80,21 @@ public class CreateGuild implements CommandHandler {
 
             region.setFlag(Flags.FAREWELL_MESSAGE, ChatUtil.CHAT_PREFIX + " " + ChatColor.translateAlternateColorCodes('&', "&7Wychodzisz z terenu gildii [&e" + guild.getShortName() + "&7] " + guild.getName() + "!"));
 
-            worldGuardDao.add(region);
-            worldGuardDao.addPlayerToRegion(region, player);
+            ProtectedCuboidRegion finalRegion = region;
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Guilds.getPlugin(), () -> {
+                worldGuardDao.add(finalRegion);
+                worldGuardDao.addPlayerToRegion(finalRegion, player);
+            });
 
-            new CreateGuildHeartTask(guildHeart, player.getWorld()).runTask(plugin);
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Guilds.getPlugin(), new CreateGuildHeartTask(guildHeart, player.getWorld()));
 
             NeededItemsDao neededItemsDao = NeededItemsDao.getInstance();
             neededItemsDao.takeItems(player.getInventory());
 
             Guild finalGuild = guild;
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> sendResult(player, finalGuild));
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Guilds.getPlugin(), () -> sendResult(player, finalGuild));
         } catch (Exception ex) {
-            plugin.getLogger().log(Level.SEVERE, "Server error!", ex);
+            Guilds.getPlugin().getLogger().log(Level.SEVERE, "Server error!", ex);
             player.sendMessage(ChatColor.RED + "Wystapil blad serwera. Sprobuj jeszcze raz lub skontaktuj sie z administratorem.");
 
             if (guild != null) guildDao.delete(guild.getId());
@@ -179,7 +160,7 @@ public class CreateGuild implements CommandHandler {
         player.sendMessage(ChatUtil.CHAT_PREFIX + " " + ChatColor.translateAlternateColorCodes('&',
                 "&7Stworzyles gildie &7[&e" + guild.getShortName() + "&7] " + guild.getName() + "!"));
 
-        plugin.getLogger().info("Player ? ? created guild ? [?] ?"
+        Guilds.getPlugin().getLogger().info("Player ? ? created guild ? [?] ?"
                 .replace("?", player.getUniqueId().toString())
                 .replace("?", player.getName())
                 .replace("?", guild.getId().toString())
