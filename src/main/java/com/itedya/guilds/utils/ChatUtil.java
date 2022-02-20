@@ -12,6 +12,10 @@ import java.util.UUID;
 public class ChatUtil {
     public static final String CHAT_PREFIX = ChatColor.DARK_GRAY + "[" + ChatColor.GREEN + "ItedyaGuilds" + ChatColor.DARK_GRAY + "]";
 
+    public static String wrapWithPrefix(String message) {
+        return CHAT_PREFIX + " " + ChatColor.translateAlternateColorCodes('&', message);
+    }
+
     public static @NotNull String prepareGuildHeartBreakMessage(Guild attackerGuild,
                                                                 String attackerUUID,
                                                                 Guild attackedGuild,
