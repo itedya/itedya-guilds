@@ -14,7 +14,7 @@ public class ConfigDao {
     private FileConfiguration configuration;
 
     private ConfigDao() {
-        Guilds guilds = new Guilds();
+        Guilds guilds = Guilds.getPlugin();
         guilds.saveDefaultConfig();
         this.configuration = guilds.getConfig();
     }
