@@ -1,0 +1,13 @@
+command:
+  name: guilds
+  sub-commands:
+    create: stworz
+    remove: usun
+    invite-player: dodaj
+    accept: akceptuj
+    kick-player: wyrzuc
+    leave: wyjdz
+    help: pomoc
+    set-home: ustaw-dom
+    info: info
+    teleport-to-home: dom
