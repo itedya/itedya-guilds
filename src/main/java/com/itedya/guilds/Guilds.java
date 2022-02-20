@@ -1,6 +1,6 @@
 package com.itedya.guilds;
 
-import com.itedya.guilds.commands.CommandsHandler;
+import com.itedya.guilds.commands.MainCommand;
 import com.itedya.guilds.daos.*;
 import com.itedya.guilds.listeners.GuildHeartBreakListener;
 import com.itedya.guilds.listeners.OnJoinSendMessage;
@@ -19,13 +19,7 @@ public final class Guilds extends JavaPlugin {
     public void onEnable() {
         plugin = this;
 
-        if (this.getDataFolder().mkdir()) {
-            this.getLogger().info("Created config data folder");
-        } else {
-            this.getLogger().info("Config data folder already created");
-        }
-
-        new CommandsHandler();
+        MainCommand.getInstance();
 
         GuildDao.getInstance();
         GuildHomeDao.getInstance();
