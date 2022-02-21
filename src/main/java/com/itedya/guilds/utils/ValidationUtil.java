@@ -2,6 +2,7 @@ package com.itedya.guilds.utils;
 
 import com.itedya.guilds.daos.MemberDao;
 import com.itedya.guilds.daos.WorldGuardDao;
+import com.itedya.guilds.enums.MemberRole;
 import com.itedya.guilds.exceptions.ValidationException;
 import com.itedya.guilds.models.Member;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -37,6 +38,26 @@ public class ValidationUtil {
 
         if (member != null) {
             throw new ValidationException("Jestes juz w gildii!");
+        }
+    }
+
+    public static void playerIsInGuild(Player player) throws ValidationException {
+        MemberDao memberDao = MemberDao.getInstance();
+
+        Member member = memberDao.getByPlayerUuid(player.getUniqueId().toString());
+
+        if (member == null) {
+            throw new ValidationException("Musisz byc w gildii!");
+        }
+    }
+
+    public static void playerIsOwnerOfGuild(Player player) throws ValidationException {
+        MemberDao memberDao = MemberDao.getInstance();
+
+        Member member = memberDao.getByPlayerUuid(player.getUniqueId().toString());
+
+        if (member.getRole() != MemberRole.OWNER) {
+            throw new ValidationException("Musisz byc wlascicielem gildii zeby to zrobic!");
         }
     }
 
