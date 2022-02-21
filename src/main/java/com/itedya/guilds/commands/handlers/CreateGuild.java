@@ -9,7 +9,9 @@ import com.itedya.guilds.models.Guild;
 import com.itedya.guilds.models.GuildHeart;
 import com.itedya.guilds.models.GuildHome;
 import com.itedya.guilds.models.Member;
+import com.itedya.guilds.tasks.CreateGuildHeartTask;
 import com.itedya.guilds.utils.ChatUtil;
+import com.itedya.guilds.utils.ThreadUtil;
 import com.itedya.guilds.utils.ValidationUtil;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -72,27 +74,23 @@ public class CreateGuild implements CommandHandler {
                     BlockVector3.at(position.getX() - 50, 500, position.getZ() - 50)
             );
 
-            region.setFlag(Flags.CHEST_ACCESS, StateFlag.State.ALLOW);
-            region.setFlag(Flags.TNT, StateFlag.State.ALLOW);
             region.setFlag(Flags.PASSTHROUGH, StateFlag.State.DENY);
-
             region.setFlag(Flags.GREET_MESSAGE, ChatUtil.CHAT_PREFIX + " " + ChatColor.translateAlternateColorCodes('&', "&7Ten teren nalezy do gildii [&e" + guild.getShortName() + "&7] " + guild.getName() + "!"));
-
             region.setFlag(Flags.FAREWELL_MESSAGE, ChatUtil.CHAT_PREFIX + " " + ChatColor.translateAlternateColorCodes('&', "&7Wychodzisz z terenu gildii [&e" + guild.getShortName() + "&7] " + guild.getName() + "!"));
 
             ProtectedCuboidRegion finalRegion = region;
-            Bukkit.getScheduler().scheduleSyncDelayedTask(Guilds.getPlugin(), () -> {
+            ThreadUtil.sync(() -> {
                 worldGuardDao.add(finalRegion);
                 worldGuardDao.addPlayerToRegion(finalRegion, player);
             });
 
-            Bukkit.getScheduler().scheduleSyncDelayedTask(Guilds.getPlugin(), new CreateGuildHeartTask(guildHeart, player.getWorld()));
+            ThreadUtil.sync(new CreateGuildHeartTask(guildHeart, player.getWorld()));
 
             NeededItemsDao neededItemsDao = NeededItemsDao.getInstance();
             neededItemsDao.takeItems(player.getInventory());
 
             Guild finalGuild = guild;
-            Bukkit.getScheduler().scheduleSyncDelayedTask(Guilds.getPlugin(), () -> sendResult(player, finalGuild));
+            ThreadUtil.sync(() -> sendResult(player, finalGuild));
         } catch (Exception ex) {
             Guilds.getPlugin().getLogger().log(Level.SEVERE, "Server error!", ex);
             player.sendMessage(ChatColor.RED + "Wystapil blad serwera. Sprobuj jeszcze raz lub skontaktuj sie z administratorem.");
@@ -166,22 +164,5 @@ public class CreateGuild implements CommandHandler {
                 .replace("?", guild.getId().toString())
                 .replace("?", guild.getShortName())
                 .replace("?", guild.getName()));
-    }
-}
-
-class CreateGuildHeartTask extends BukkitRunnable {
-    private final GuildHeart guildHeart;
-    private final World world;
-
-    public CreateGuildHeartTask(GuildHeart guildHeart, World world) {
-        this.world = world;
-        this.guildHeart = guildHeart;
-    }
-
-    @Override
-    public void run() {
-        Location loc = new Location(world, guildHeart.getX(), guildHeart.getY(), guildHeart.getZ());
-
-        world.getBlockAt(loc).setType(Material.REDSTONE_BLOCK);
     }
 }
