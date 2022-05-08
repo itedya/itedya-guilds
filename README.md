@@ -1,3 +1,4 @@
+# Stary plugin, brak wsparcia, widoczne w celu pokazania w portofolio.
 <p align="center">
   <img src="https://i.imgur.com/i93g9jw.png" width="300px" />
 </p>
